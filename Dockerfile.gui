@@ -1,0 +1,27 @@
+# Dockerfile.gui
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# 1. Install system tools (curl is useful for healthchecks inside container)
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# 2. Copy requirements
+COPY requirements_deployment.txt .
+
+# 3. Install Python dependencies
+# We forcefully upgrade Streamlit to >=1.37.0 to support the live health check (@st.fragment)
+RUN pip install --no-cache-dir -r requirements_deployment.txt
+RUN pip install --no-cache-dir "streamlit>=1.37.0" plotly
+
+# 4. Copy the entire source code folder
+COPY src/ /app/src/
+
+# 5. Expose the Streamlit port
+EXPOSE 8501
+
+# 6. Run the specific GUI script
+# Note the path: src/gui/app_gui_deployment.py
+CMD ["streamlit", "run", "src/gui/app_gui_deployment.py", "--server.port=8501", "--server.address=0.0.0.0"]

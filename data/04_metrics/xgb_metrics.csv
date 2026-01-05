@@ -1,0 +1,4 @@
+Country,Energy_Type,MAE_MW,Test_Peak_MW,Error_Percentage,Carbon_kg_CO2,Status
+GLOBAL,Solar,42.5,23778.55,0.2,0.0,Success
+GLOBAL,Wind_Onshore,136.9,44392.25,0.3,0.0,Success
+GLOBAL,Wind_Offshore,26.37,7397.25,0.4,0.0,Success

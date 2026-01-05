@@ -1,0 +1,239 @@
+import React, { useState } from 'react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Sun, Wind, Waves } from 'lucide-react';
+
+const EnergyForecastDashboard = () => {
+  const countries = ['Austria', 'Belgium', 'Bulgaria', 'Croatia', 'Cyprus', 'Czech Republic', 'Denmark', 'Estonia', 'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'Ireland', 'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Malta', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden', 'United Kingdom'];
+  
+  const energyTypes = ['Wind Onshore', 'Wind Offshore', 'Solar'];
+  const models = [
+    { id: 'low', name: 'Eco Model', emissions: '0.02 kg CO₂/request', description: 'Lower accuracy, minimal emissions' },
+    { id: 'high', name: 'Performance Model', emissions: '0.15 kg CO₂/request', description: 'Higher accuracy, increased emissions' }
+  ];
+
+  const [selectedCountry, setSelectedCountry] = useState('Germany');
+  const [selectedEnergyType, setSelectedEnergyType] = useState('Wind Onshore');
+  const [selectedModel, setSelectedModel] = useState('low');
+  const [viewMode, setViewMode] = useState('forecast');
+
+  // Sample forecast data (5 hours with 1 hour intervals)
+  const forecastData = Array.from({ length: 6 }, (_, i) => ({
+    hour: `${i}:00`,
+    predicted: Math.random() * 500 + 200,
+    confidence_high: Math.random() * 600 + 250,
+    confidence_low: Math.random() * 400 + 150,
+  }));
+
+  // Sample historical comparison data
+  const comparisonData = Array.from({ length: 7 }, (_, i) => ({
+    day: `Day ${i + 1}`,
+    sourceA: Math.random() * 400 + 200,
+    sourceB: Math.random() * 400 + 200,
+    sourceC: Math.random() * 400 + 200,
+  }));
+
+  const getIcon = (type) => {
+    switch(type) {
+      case 'Wind Onshore': return <Wind className="w-5 h-5" />;
+      case 'Wind Offshore': return <Waves className="w-5 h-5" />;
+      case 'Solar': return <Sun className="w-5 h-5" />;
+      default: return null;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Renewable Energy Forecast System</h1>
+          <p className="text-gray-600">Multi-source forecasting for 28 European countries</p>
+        </div>
+
+        {/* Control Panel */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Country Selector */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
+              <select 
+                value={selectedCountry}
+                onChange={(e) => setSelectedCountry(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {countries.map(country => (
+                  <option key={country} value={country}>{country}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Energy Type Selector */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Energy Type</label>
+              <select 
+                value={selectedEnergyType}
+                onChange={(e) => setSelectedEnergyType(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {energyTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* View Mode */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">View Mode</label>
+              <select 
+                value={viewMode}
+                onChange={(e) => setViewMode(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="forecast">24h Forecast</option>
+                <option value="comparison">Source Comparison</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Model Selection Card */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Forecast Model Selection</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {models.map((model) => (
+              <div 
+                key={model.id}
+                onClick={() => setSelectedModel(model.id)}
+                className={`cursor-pointer p-4 rounded-lg border-2 transition-all ${
+                  selectedModel === model.id 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="font-semibold text-gray-800">{model.name}</h3>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    selectedModel === model.id 
+                      ? 'border-blue-500 bg-blue-500' 
+                      : 'border-gray-300'
+                  }`}>
+                    {selectedModel === model.id && (
+                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                    )}
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mb-2">{model.description}</p>
+                <div className="flex items-center">
+                  <span className={`text-xs font-medium px-2 py-1 rounded ${
+                    model.id === 'low' 
+                      ? 'bg-green-100 text-green-700' 
+                      : 'bg-orange-100 text-orange-700'
+                  }`}>
+                    {model.emissions}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Current Output</p>
+                <p className="text-2xl font-bold text-gray-800">342 MW</p>
+              </div>
+              {getIcon(selectedEnergyType)}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Peak Forecast (24h)</p>
+                <p className="text-2xl font-bold text-green-600">687 MW</p>
+              </div>
+              <div className="text-green-600">↑</div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Forecast Accuracy</p>
+                <p className="text-2xl font-bold text-blue-600">94.3%</p>
+              </div>
+              <div className="text-blue-600">✓</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Chart */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            {viewMode === 'forecast' ? '5-Hour Forecast' : '7-Day Source Comparison'}
+          </h2>
+          
+          <ResponsiveContainer width="100%" height={400}>
+            {viewMode === 'forecast' ? (
+              <LineChart data={forecastData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="hour" />
+                <YAxis label={{ value: 'Power (MW)', angle: -90, position: 'insideLeft' }} />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="confidence_high" stroke="#93c5fd" strokeDasharray="5 5" name="Upper Bound" />
+                <Line type="monotone" dataKey="predicted" stroke="#3b82f6" strokeWidth={2} name="Predicted" />
+                <Line type="monotone" dataKey="confidence_low" stroke="#93c5fd" strokeDasharray="5 5" name="Lower Bound" />
+              </LineChart>
+            ) : (
+              <BarChart data={comparisonData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="day" />
+                <YAxis label={{ value: 'Power (MW)', angle: -90, position: 'insideLeft' }} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="sourceA" fill="#3b82f6" name="Source A" />
+                <Bar dataKey="sourceB" fill="#10b981" name="Source B" />
+                <Bar dataKey="sourceC" fill="#f59e0b" name="Source C" />
+              </BarChart>
+            )}
+          </ResponsiveContainer>
+        </div>
+
+        {/* Data Table */}
+        <div className="bg-white rounded-lg shadow-md p-6 mt-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Hourly Forecast Details</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left">Time</th>
+                  <th className="px-4 py-2 text-right">Forecast (MW)</th>
+                  <th className="px-4 py-2 text-right">Confidence</th>
+                  <th className="px-4 py-2 text-right">Range</th>
+                </tr>
+              </thead>
+              <tbody>
+                {forecastData.map((item, idx) => (
+                  <tr key={idx} className="border-t hover:bg-gray-50">
+                    <td className="px-4 py-2">{item.hour}</td>
+                    <td className="px-4 py-2 text-right font-medium">{item.predicted.toFixed(0)}</td>
+                    <td className="px-4 py-2 text-right text-green-600">High</td>
+                    <td className="px-4 py-2 text-right text-gray-600">
+                      {item.confidence_low.toFixed(0)} - {item.confidence_high.toFixed(0)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default EnergyForecastDashboard;
