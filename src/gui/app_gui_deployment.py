@@ -25,27 +25,27 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- LIVE HEALTH & CARBON CHECK ---
+# --- LIVE HEALTH & CARBON CHECK (THE KILL SWITCH) ---
 @st.fragment(run_every=3)
 def display_live_health_check():
     st.markdown("### 📡 Live System Monitor")
     
-    # 1. READ SESSION STATE TO GET USER SELECTION
-    # This allows the live ticker to react to the sidebar instantly
+    # 1. READ SESSION STATE (This reacts to your sidebar click instantly)
     user_selection = st.session_state.get("sim_selector", "Automatic")
     
+    # 2. MAP SELECTION TO API PARAMETERS
     live_params = {}
-    if "LOW" in user_selection:
-        live_params["carbon_mode"] = "LOW"
-    elif "HIGH" in user_selection:
-        live_params["carbon_mode"] = "HIGH"
+    if "Clean Grid" in user_selection:
+        live_params["carbon_mode"] = "LOW"  # Orchestrator sees LOW -> STARTS Container
+    elif "Dirty Grid" in user_selection:
+        live_params["carbon_mode"] = "HIGH" # Orchestrator sees HIGH -> STOPS Container
     # If Automatic, we send nothing (None)
     
     container = st.container(border=True)
     with container:
-        # --- GET LIVE CARBON DATA ---
+        # --- GET LIVE CARBON DATA (AND TRIGGER INFRASTRUCTURE CHANGE) ---
         try:
-            # Pass the params here!
+            # Sending 'params' here triggers the manage_infrastructure() logic in the backend
             carbon_resp = requests.get(f"{API_URL}/carbon-live", params=live_params, timeout=1)
             
             if carbon_resp.status_code == 200:
@@ -81,6 +81,7 @@ def display_live_health_check():
             if response.status_code == 200:
                 data = response.json()
                 orch_up = True
+                # Check for "Online" string in response
                 xgb_up = "Online" in data.get("xgb_service", "Offline")
                 hw_up = "Online" in data.get("hw_service", "Offline")
                 
@@ -113,51 +114,35 @@ with st.sidebar:
     
     st.header("🎮 Grid Control")
     country_map = {
-            "Austria": "AT",
-            "Belgium": "BE",
-            "Bulgaria": "BG",
-            "Croatia": "HR",
-            "Czech Republic": "CZ",
-            "Denmark": "DK",
-            "Estonia": "EE",
-            "Finland": "FI",
-            "France": "FR",
-            "Germany": "DE",
-            "Greece": "GR",
-            "Hungary": "HU",
-            "Ireland": "IE",
-            "Italy": "IT",
-            "Latvia": "LV",
-            "Lithuania": "LT",
-            "Luxembourg": "LU",
-            "Netherlands": "NL",
-            "Norway": "NO",
-            "Poland": "PL",
-            "Portugal": "PT",
-            "Romania": "RO",
-            "Slovakia": "SK",
-            "Slovenia": "SI",
-            "Spain": "ES",
-            "Sweden": "SE",
-            "Switzerland": "CH",
-            "United Kingdom": "UK",
+            "Austria": "AT", "Belgium": "BE", "Bulgaria": "BG", "Croatia": "HR",
+            "Czech Republic": "CZ", "Denmark": "DK", "Estonia": "EE", "Finland": "FI",
+            "France": "FR", "Germany": "DE", "Greece": "GR", "Hungary": "HU",
+            "Ireland": "IE", "Italy": "IT", "Latvia": "LV", "Lithuania": "LT",
+            "Luxembourg": "LU", "Netherlands": "NL", "Norway": "NO", "Poland": "PL",
+            "Portugal": "PT", "Romania": "RO", "Slovakia": "SK", "Slovenia": "SI",
+            "Spain": "ES", "Sweden": "SE", "Switzerland": "CH", "United Kingdom": "UK",
         }
     country = st.selectbox("Country", list(country_map.keys()))
     
     st.markdown("### 🌍 Simulation Mode")
     
-    # ADDED 'key="sim_selector"' here!
+    # ✅ UPDATED LABELS: Clearer meaning for the infrastructure
     sim_option = st.radio(
         "Grid Carbon Intensity",
-        ["Automatic (Real-time)", "LOW (Eco-Friendly)", "HIGH (Dirty Grid)"],
+        [
+            "Automatic (Real-time)", 
+            "Low Intensity (Clean Grid)",  # Implies Performance Mode (Start XGB)
+            "High Intensity (Dirty Grid)"  # Implies Eco Mode (Stop XGB)
+        ],
         index=0,
-        key="sim_selector"
+        key="sim_selector", # This key saves the value to st.session_state
+        help="High Intensity will shut down the XGBoost container to save energy."
     )
     
-    # Logic for the Run Button (API Parameters)
+    # Logic for the Run Button
     if "Automatic" in sim_option:
         api_param = None
-    elif "LOW" in sim_option:
+    elif "Clean Grid" in sim_option:
         api_param = "LOW"
     else:
         api_param = "HIGH"
